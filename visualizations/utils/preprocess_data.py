@@ -1,12 +1,15 @@
 import pandas as pd 
 import os  
+import warnings
+import json
+warnings.filterwarnings('ignore')
 
 """
 This python files preprocess the John Hopkins Covid data 
 """
 
-DIR_NAME = "..\..\csse_covid_19_data\csse_covid_19_daily_reports"
-DIR_Name= "https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_daily_reports"
+DIR_NAME = "../../csse_covid_19_data\csse_covid_19_daily_reports"
+DIR_NAME_ZIPCODE_DATA = '../../additional_data'
 
 def import_data(dir_name):
     col_to_rename = {"Country/Region":"Country_Region",
@@ -59,7 +62,7 @@ def clean_country_names(df):
         
     
 def get_per_country_data(df):
-    return df.groupby(["Country_Region","Date"])["Confirmed","Deaths","Recovered"].sum().reset_index()
+    return df.groupby(["Country_Region","Date"]).apply(sum).loc[:,["Confirmed","Deaths","Recovered"]].reset_index()
 
 
 def get_specific_countries(df_per_country, list_of_countries):
@@ -69,13 +72,44 @@ def get_specific_countries(df_per_country, list_of_countries):
 def clean_data(dir_name=DIR_NAME):
     df = import_data(dir_name)
     df = clean_country_names(preprocess_data(df))
-    df_per_country = get_per_country_data(df)
-    return df_per_country
+    return df
 
 
 def get_european_data(dir_name=DIR_NAME):
     return get_specific_countries(clean_data(dir_name), ["France","Germany","Italy","Spain","United Kingdom"])
 
+def get_states_data(dir_name=DIR_NAME, 
+                    dir_name_zipcode_data=DIR_NAME_ZIPCODE_DATA):
+
+    df = clean_data(dir_name)
+    df_usa = df[df.Country_Region == "US"]
+    
+    city_to_code = pd.read_csv(os.path.join(dir_name_zipcode_data, "us_city_to_code.csv"))
+    city_to_code = city_to_code.loc[:,["city","state_abbr"]].set_index("city").to_dict()["state_abbr"]
+    
+    with open(os.path.join(dir_name_zipcode_data, "us_state_to_code.json")) as json_file:
+        province_to_code = dict([[v,k] for k,v in json.load(json_file).items()])
+    
+    # get state code using province_state name 
+    df_usa["Code"] = [el.split(",")[-1].strip() for el in df_usa.Province_State]
+    df_usa["Code"] = df_usa["Code"].replace(city_to_code)
+    df_usa["Code"] = df_usa["Code"].replace(province_to_code)
+    
+    error = []
+    for province in df_usa.Code:
+        if len(province) > 2:
+            error.append(province)
+    error = list(set(error))
+
+    df_usa = df_usa[~ df_usa.Code.isin(error)]
+
+    code_province = pd.read_csv("https://raw.githubusercontent.com/scpike/us-state-county-zip/master/geo-data.csv")
+    code_province = code_province.loc[:,["city","state_abbr"]].set_index("city").to_dict()["state_abbr"]
+    df_usa = df_usa.groupby(["Code","Date"])["Confirmed"].sum().reset_index().sort_values(by="Date")
+    
+    return df_usa
+
+
 if __name__ == "__main__":
-    print(clean_data())
+    print(get_states_data().head())
 
