@@ -8,8 +8,8 @@ warnings.filterwarnings('ignore')
 This python files preprocess the John Hopkins Covid data 
 """
 
-DIR_NAME = "../../csse_covid_19_data\csse_covid_19_daily_reports"
-DIR_NAME_ZIPCODE_DATA = '../../additional_data'
+DIR_NAME = "../data/covid"
+DIR_NAME_ZIPCODE_DATA = '../data/us_meta'
 
 def import_data(dir_name):
     col_to_rename = {"Country/Region":"Country_Region",
