@@ -39,7 +39,7 @@ def preprocess_data(df):
     df.Province_State = df.Province_State.fillna("")  
 
     df.Last_Update = pd.to_datetime(pd.to_datetime(df.Last_Update).map(lambda x: x.strftime('%Y-%m-%d'))) 
-    df = df.drop_duplicates(subset=["Province_State","Country_Region","Date"], keep="first")
+    #df = df.drop_duplicates(subset=["Province_State","Country_Region","Date"], keep="first")
     
     return df
 
@@ -92,19 +92,8 @@ def get_states_data(dir_name=DIR_NAME,
     
     # get state code using province_state name 
     df_usa["Code"] = [el.split(",")[-1].strip() for el in df_usa.Province_State]
-    df_usa["Code"] = df_usa["Code"].replace(city_to_code)
     df_usa["Code"] = df_usa["Code"].replace(province_to_code)
-    
-    error = []
-    for province in df_usa.Code:
-        if len(province) > 2:
-            error.append(province)
-    error = list(set(error))
-
-    df_usa = df_usa[~ df_usa.Code.isin(error)]
-
-    code_province = pd.read_csv("https://raw.githubusercontent.com/scpike/us-state-county-zip/master/geo-data.csv")
-    code_province = code_province.loc[:,["city","state_abbr"]].set_index("city").to_dict()["state_abbr"]
+    df_usa["Code"] = df_usa["Code"].replace(city_to_code)
     df_usa = df_usa.groupby(["Code","Date"])["Confirmed"].sum().reset_index().sort_values(by="Date")
     
     return df_usa
