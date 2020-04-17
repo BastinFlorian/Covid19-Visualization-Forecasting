@@ -5,7 +5,9 @@ We introduce different visualizations and analysis about Covid 19.
 Our repository is based on the John Hopkins University Covid 19 data, updated every day.
 
 
-![World Map of confirmed cases demo](demo/world_map_GIF.gif)
+
+![World Map of confirmed cases demo](demo/world_map.gif)
+![US Map of confirmed cases demo](demo/us_map.gif)
 
 
 
