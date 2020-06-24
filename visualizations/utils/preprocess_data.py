@@ -8,10 +8,10 @@ warnings.filterwarnings('ignore')
 This python files preprocess the John Hopkins Covid data 
 """
 
-DIR_NAME = "../data/covid"
-DIR_NAME_ZIPCODE_DATA = '../data/us_meta'
+DIR_NAME = "../../data/covid"
+DIR_NAME_ZIPCODE_DATA = '../../data/us_meta'
 
-def import_data(dir_name):
+def import_data(dir_name=DIR_NAME):
     col_to_rename = {"Country/Region":"Country_Region",
                      "Province/State":"Province_State",
                      "Last Update":"Last_Update",
@@ -93,12 +93,15 @@ def get_states_data(dir_name=DIR_NAME,
     # get state code using province_state name 
     df_usa["Code"] = [el.split(",")[-1].strip() for el in df_usa.Province_State]
     df_usa["Code"] = df_usa["Code"].replace(province_to_code)
-    df_usa["Code"] = df_usa["Code"].replace(city_to_code)
+    liste = df_usa.Code.unique().tolist()
+    liste = [el for el in liste if el not in list(city_to_code.keys()) ]
+    liste = [el for el in liste if el not in list(city_to_code.values()) ]
+    df_usa = df_usa[~df_usa.Code.isin(liste)]
     df_usa = df_usa.groupby(["Code","Date"])["Confirmed"].sum().reset_index().sort_values(by="Date")
     
     return df_usa
 
 
 if __name__ == "__main__":
-    print(get_states_data().head())
+    get_states_data()
 
